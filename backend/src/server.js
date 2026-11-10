@@ -5,9 +5,23 @@ import categoryRoutes from './routes/categoryRoutes.js';
 import transactionRoutes from './routes/transactionRoutes.js';
 import budgetRoutes from './routes/budgetRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
+import cors from "cors";
+
+
 dotenv.config();
 
 const app = express();
+app.use(express.json());
+
+
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
 app.use(express.json());
 // ROUTES
 app.use('/api/auth', authRoutes);
