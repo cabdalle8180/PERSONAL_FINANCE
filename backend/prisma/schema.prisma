@@ -1,0 +1,99 @@
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Transaction types
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+// Category types
+enum CategoryType {
+  INCOME
+  EXPENSE
+}
+
+// User Model
+model User {
+  id           String   @id @default(cuid())
+  name         String?
+  email        String   @unique
+  passwordHash String
+
+  categories   Category[]
+  transactions Transaction[]
+  budgets      Budget[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Category Model
+model Category {
+  id        String       @id @default(cuid())
+  name      String
+  type      CategoryType
+  color     String       @default("#64748b")
+
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  transactions Transaction[]
+  budgets      Budget[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name, type])
+  @@index([userId])
+}
+
+// Transaction Model
+model Transaction {
+  id          String          @id @default(cuid())
+  amount      Decimal         @db.Decimal(12, 2)
+  type        TransactionType
+  description String?
+  date        DateTime        @default(now())
+
+  userId      String
+  categoryId  String
+
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([userId, date])
+  @@index([userId, type])
+  @@index([categoryId])
+}
+
+// Budget Model
+model Budget {
+  id         String   @id @default(cuid())
+  name       String
+  amount     Decimal  @db.Decimal(12, 2)
+  month      Int
+  year       Int
+
+  userId     String
+  categoryId String
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, categoryId, month, year])
+  @@index([userId, year, month])
+}
