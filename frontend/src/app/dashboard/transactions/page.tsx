@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
@@ -77,7 +76,7 @@ export default function TransactionsPage() {
   const [success, setSuccess] = useState("");
 
   const loadData = useCallback(async () => {
-    const token = sessionStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
     if (!token) {
       router.replace("/login");
@@ -142,7 +141,7 @@ export default function TransactionsPage() {
   ) => {
     event.preventDefault();
 
-    const token = sessionStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
     if (!token) {
       router.replace("/login");
@@ -218,7 +217,8 @@ export default function TransactionsPage() {
 
     if (!confirmed) return;
 
-    const token = sessionStorage.getItem("token");
+    // Use the same storage as Login and AuthGuard.
+    const token = localStorage.getItem("token");
 
     if (!token) {
       router.replace("/login");
@@ -256,33 +256,37 @@ export default function TransactionsPage() {
   if (loading) {
     return (
       <div className="flex min-h-64 items-center justify-center">
-        <p className="text-slate-500">Loading transactions...</p>
+        <p className="text-sm text-slate-500">
+          Loading transactions...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full min-w-0 space-y-5 sm:space-y-6">
 
       {/* Header */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">
+      <div className="flex min-w-0 flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">
             Transactions
           </h1>
+
           <p className="mt-1 text-sm text-slate-500">
             Manage your income and expenses.
           </p>
         </div>
 
         <button
+          type="button"
           onClick={() => {
             resetForm();
             setShowForm(true);
             setError("");
             setSuccess("");
           }}
-          className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700"
+          className="flex w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 sm:w-auto"
         >
           <Plus size={18} />
           Add Transaction
@@ -291,29 +295,36 @@ export default function TransactionsPage() {
 
       {/* Messages */}
       {error && (
-        <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">
+        <div
+          role="alert"
+          className="break-words rounded-lg border border-red-100 bg-red-50 p-3 text-sm text-red-600 sm:p-4"
+        >
           {error}
         </div>
       )}
 
       {success && (
-        <div className="rounded-lg bg-green-50 p-4 text-sm text-green-700">
+        <div
+          role="status"
+          className="break-words rounded-lg border border-green-100 bg-green-50 p-3 text-sm text-green-700 sm:p-4"
+        >
           {success}
         </div>
       )}
 
       {/* Add / Edit Form */}
       {showForm && (
-        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">
+        <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+          <div className="mb-5 flex items-center justify-between gap-3 sm:mb-6">
+            <h2 className="text-base font-semibold text-slate-900 sm:text-lg">
               {editingId ? "Edit Transaction" : "New Transaction"}
             </h2>
 
             <button
               type="button"
               onClick={resetForm}
-              className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"
+              aria-label="Close form"
+              className="shrink-0 rounded-lg p-2 text-slate-500 transition hover:bg-slate-100"
             >
               <X size={20} />
             </button>
@@ -331,10 +342,11 @@ export default function TransactionsPage() {
                 <button
                   type="button"
                   onClick={() => handleTypeChange("EXPENSE")}
-                  className={`rounded-lg border p-3 font-medium ${
+                  aria-pressed={form.type === "EXPENSE"}
+                  className={`rounded-lg border p-3 text-sm font-medium transition sm:text-base ${
                     form.type === "EXPENSE"
                       ? "border-red-500 bg-red-50 text-red-600"
-                      : "border-slate-200 text-slate-600"
+                      : "border-slate-200 text-slate-600 hover:bg-slate-50"
                   }`}
                 >
                   Expense
@@ -343,10 +355,11 @@ export default function TransactionsPage() {
                 <button
                   type="button"
                   onClick={() => handleTypeChange("INCOME")}
-                  className={`rounded-lg border p-3 font-medium ${
+                  aria-pressed={form.type === "INCOME"}
+                  className={`rounded-lg border p-3 text-sm font-medium transition sm:text-base ${
                     form.type === "INCOME"
                       ? "border-green-500 bg-green-50 text-green-600"
-                      : "border-slate-200 text-slate-600"
+                      : "border-slate-200 text-slate-600 hover:bg-slate-50"
                   }`}
                 >
                   Income
@@ -354,110 +367,114 @@ export default function TransactionsPage() {
               </div>
             </div>
 
-            {/* Amount */}
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Amount ($)
-              </label>
+            {/* Form Fields */}
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
 
-              <input
-                type="number"
-                required
-                min="0.01"
-                max="9999999999.99"
-                step="0.01"
-                value={form.amount}
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    amount: event.target.value,
-                  })
-                }
-                placeholder="0.00"
-                className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
-              />
-            </div>
+              {/* Amount */}
+              <div className="min-w-0">
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Amount ($)
+                </label>
 
-            {/* Category */}
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Category
-              </label>
+                <input
+                  type="number"
+                  required
+                  min="0.01"
+                  max="9999999999.99"
+                  step="0.01"
+                  value={form.amount}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      amount: event.target.value,
+                    })
+                  }
+                  placeholder="0.00"
+                  className="w-full min-w-0 rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
 
-              <select
-                required
-                value={form.categoryId}
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    categoryId: event.target.value,
-                  })
-                }
-                className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
-              >
-                <option value="">Select category</option>
+              {/* Category */}
+              <div className="min-w-0">
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Category
+                </label>
 
-                {filteredCategories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
+                <select
+                  required
+                  value={form.categoryId}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      categoryId: event.target.value,
+                    })
+                  }
+                  className="w-full min-w-0 rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="">Select category</option>
 
-              {filteredCategories.length === 0 && (
-                <p className="mt-2 text-sm text-amber-600">
-                  No {form.type.toLowerCase()} categories found.
-                  Create a category first.
-                </p>
-              )}
-            </div>
+                  {filteredCategories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
 
-            {/* Description */}
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Description
-              </label>
+                {filteredCategories.length === 0 && (
+                  <p className="mt-2 text-xs text-amber-600 sm:text-sm">
+                    No {form.type.toLowerCase()} categories found.
+                    Create a category first.
+                  </p>
+                )}
+              </div>
 
-              <input
-                type="text"
-                value={form.description}
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    description: event.target.value,
-                  })
-                }
-                placeholder="What was this transaction for?"
-                className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
-              />
-            </div>
+              {/* Description */}
+              <div className="min-w-0">
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Description
+                </label>
 
-            {/* Date */}
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Date
-              </label>
+                <input
+                  type="text"
+                  value={form.description}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      description: event.target.value,
+                    })
+                  }
+                  placeholder="What was this transaction for?"
+                  className="w-full min-w-0 rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
 
-              <input
-                type="date"
-                required
-                value={form.date}
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    date: event.target.value,
-                  })
-                }
-                className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
-              />
+              {/* Date */}
+              <div className="min-w-0">
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Date
+                </label>
+
+                <input
+                  type="date"
+                  required
+                  value={form.date}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      date: event.target.value,
+                    })
+                  }
+                  className="w-full min-w-0 rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row">
               <button
                 type="submit"
                 disabled={saving || filteredCategories.length === 0}
-                className="rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
               >
                 {saving
                   ? "Saving..."
@@ -469,7 +486,7 @@ export default function TransactionsPage() {
               <button
                 type="button"
                 onClick={resetForm}
-                className="rounded-lg border border-slate-300 px-6 py-3 font-semibold text-slate-600 hover:bg-slate-50"
+                className="w-full rounded-lg border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 sm:w-auto"
               >
                 Cancel
               </button>
@@ -483,8 +500,10 @@ export default function TransactionsPage() {
         {["ALL", "INCOME", "EXPENSE"].map((item) => (
           <button
             key={item}
+            type="button"
             onClick={() => setFilter(item)}
-            className={`rounded-lg px-4 py-2 text-sm font-medium ${
+            aria-pressed={filter === item}
+            className={`rounded-lg px-3 py-2 text-xs font-medium transition sm:px-4 sm:text-sm ${
               filter === item
                 ? "bg-blue-600 text-white"
                 : "bg-white text-slate-600 hover:bg-slate-100"
@@ -500,33 +519,51 @@ export default function TransactionsPage() {
       </div>
 
       {/* Transactions Table */}
-      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-100 p-5">
-          <h2 className="font-semibold text-slate-900">
+      <section className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-100 p-4 sm:p-5">
+          <h2 className="text-sm font-semibold text-slate-900 sm:text-base">
             Transaction History ({filteredTransactions.length})
           </h2>
         </div>
 
         {filteredTransactions.length === 0 ? (
-          <div className="p-10 text-center">
-            <p className="font-medium text-slate-700">
+          <div className="p-8 text-center sm:p-10">
+            <p className="text-sm font-medium text-slate-700">
               No transactions found.
             </p>
-            <p className="mt-1 text-sm text-slate-500">
+
+            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
               Add your first transaction to get started.
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="w-full overflow-x-auto">
             <table className="w-full min-w-[700px] text-left text-sm">
               <thead className="bg-slate-50 text-slate-500">
                 <tr>
-                  <th className="px-5 py-4">Transaction</th>
-                  <th className="px-5 py-4">Category</th>
-                  <th className="px-5 py-4">Date</th>
-                  <th className="px-5 py-4">Type</th>
-                  <th className="px-5 py-4 text-right">Amount</th>
-                  <th className="px-5 py-4 text-center">Actions</th>
+                  <th className="whitespace-nowrap px-4 py-4 font-medium sm:px-5">
+                    Transaction
+                  </th>
+
+                  <th className="whitespace-nowrap px-4 py-4 font-medium sm:px-5">
+                    Category
+                  </th>
+
+                  <th className="whitespace-nowrap px-4 py-4 font-medium sm:px-5">
+                    Date
+                  </th>
+
+                  <th className="whitespace-nowrap px-4 py-4 font-medium sm:px-5">
+                    Type
+                  </th>
+
+                  <th className="whitespace-nowrap px-4 py-4 text-right font-medium sm:px-5">
+                    Amount
+                  </th>
+
+                  <th className="whitespace-nowrap px-4 py-4 text-center font-medium sm:px-5">
+                    Actions
+                  </th>
                 </tr>
               </thead>
 
@@ -534,25 +571,25 @@ export default function TransactionsPage() {
                 {filteredTransactions.map((transaction) => (
                   <tr
                     key={transaction.id}
-                    className="border-t border-slate-100 hover:bg-slate-50"
+                    className="border-t border-slate-100 transition hover:bg-slate-50"
                   >
-                    <td className="px-5 py-4">
-                      <div className="font-medium text-slate-800">
+                    <td className="max-w-[200px] px-4 py-4 sm:px-5">
+                      <div className="truncate font-medium text-slate-800">
                         {transaction.description || "No description"}
                       </div>
                     </td>
 
-                    <td className="px-5 py-4">
+                    <td className="whitespace-nowrap px-4 py-4 text-slate-600 sm:px-5">
                       {transaction.category.name}
                     </td>
 
-                    <td className="px-5 py-4 text-slate-500">
+                    <td className="whitespace-nowrap px-4 py-4 text-slate-500 sm:px-5">
                       {new Date(transaction.date).toLocaleDateString()}
                     </td>
 
-                    <td className="px-5 py-4">
+                    <td className="whitespace-nowrap px-4 py-4 sm:px-5">
                       <span
-                        className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium sm:px-3 ${
                           transaction.type === "INCOME"
                             ? "bg-green-50 text-green-700"
                             : "bg-red-50 text-red-700"
@@ -569,7 +606,7 @@ export default function TransactionsPage() {
                     </td>
 
                     <td
-                      className={`px-5 py-4 text-right font-semibold ${
+                      className={`whitespace-nowrap px-4 py-4 text-right font-semibold sm:px-5 ${
                         transaction.type === "INCOME"
                           ? "text-green-600"
                           : "text-red-600"
@@ -579,20 +616,24 @@ export default function TransactionsPage() {
                       {formatAmount(transaction.amount)}
                     </td>
 
-                    <td className="px-5 py-4">
-                      <div className="flex justify-center gap-2">
+                    <td className="whitespace-nowrap px-4 py-4 sm:px-5">
+                      <div className="flex justify-center gap-1 sm:gap-2">
                         <button
+                          type="button"
                           onClick={() => handleEdit(transaction)}
                           title="Edit transaction"
-                          className="rounded-lg p-2 text-blue-600 hover:bg-blue-50"
+                          aria-label="Edit transaction"
+                          className="rounded-lg p-2 text-blue-600 transition hover:bg-blue-50"
                         >
                           <Pencil size={17} />
                         </button>
 
                         <button
+                          type="button"
                           onClick={() => handleDelete(transaction.id)}
                           title="Delete transaction"
-                          className="rounded-lg p-2 text-red-600 hover:bg-red-50"
+                          aria-label="Delete transaction"
+                          className="rounded-lg p-2 text-red-600 transition hover:bg-red-50"
                         >
                           <Trash2 size={17} />
                         </button>

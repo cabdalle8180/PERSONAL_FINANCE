@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
-
+import AuthGuard from "@/components/auth/AuthGuard";
 interface AuthResponse {
   success: boolean;
   message: string;
@@ -37,9 +37,10 @@ export default function LoginPage() {
       });
 
       // Temporary token storage for initial integration.
-      sessionStorage.setItem("token", data.token);
-
-      router.push("/dashboard");
+      // sessionStorage.setItem("token", data.token);
+      localStorage.setItem("token", data.token);
+      router.replace("/dashboard");
+      // router.push("/dashboard");
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Login failed"
@@ -50,6 +51,7 @@ export default function LoginPage() {
   };
 
   return (
+    <AuthGuard mode="guest">
     <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
         <h1 className="text-3xl font-bold text-slate-900">
@@ -112,5 +114,7 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+    </AuthGuard>
+    
   );
 }

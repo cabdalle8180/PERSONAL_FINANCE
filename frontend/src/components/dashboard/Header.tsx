@@ -1,5 +1,7 @@
+
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   Bell,
@@ -7,6 +9,20 @@ import {
   ChevronDown,
   UserRound,
 } from "lucide-react";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+interface UserProfile {
+  id: string;
+  name?: string | null;
+  email?: string;
+}
+
+interface ProfileResponse {
+  success: boolean;
+  user: UserProfile;
+  message?: string;
+}
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -18,35 +34,73 @@ const pageTitles: Record<string, string> = {
 
 export default function Header() {
   const pathname = usePathname();
+  const title = pageTitles[pathname] ?? "Dashboard";
 
-  const title =
-    pageTitles[pathname] ?? "Dashboard";
+  const [user, setUser] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        if (!token || !API_URL) return;
+
+        // Load cached user first
+        const storedUser = localStorage.getItem("user");
+
+        if (storedUser) {
+          setUser(JSON.parse(storedUser) as UserProfile);
+        }
+
+        // Get latest profile from backend
+        const response = await fetch(`${API_URL}/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) return;
+
+        const data = (await response.json()) as ProfileResponse;
+
+        if (data.success && data.user) {
+          setUser(data.user);
+          localStorage.setItem("user", JSON.stringify(data.user));
+        }
+      } catch (error) {
+        console.error("Failed to load user profile:", error);
+      }
+    };
+
+    void loadUser();
+  }, []);
 
   return (
-    <header className="flex h-20 items-center justify-between border-b border-slate-200 bg-white px-6">
+    <header className="flex h-16 w-full min-w-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-3 sm:h-20 sm:gap-4 sm:px-5 lg:px-6">
 
       {/* Page title */}
-      <div>
-        <h1 className="text-xl font-bold text-slate-900">
+      <div className="min-w-0 flex-1">
+        <h1 className="truncate text-lg font-bold text-slate-900 sm:text-xl">
           {title}
         </h1>
 
-        <p className="text-sm text-slate-500">
+        <p className="hidden text-sm text-slate-500 sm:block">
           Manage your personal finances
         </p>
       </div>
 
       {/* Right section */}
-      <div className="flex items-center gap-4">
+      <div className="flex shrink-0 items-center gap-1 sm:gap-3 lg:gap-4">
 
         {/* Search */}
         <div className="hidden items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 md:flex">
-          <Search size={18} className="text-slate-400" />
+          <Search size={18} className="shrink-0 text-slate-400" />
 
           <input
             type="text"
             placeholder="Search..."
-            className="w-36 bg-transparent text-sm outline-none placeholder:text-slate-400"
+            aria-label="Search"
+            className="w-24 bg-transparent text-sm outline-none placeholder:text-slate-400 lg:w-36"
           />
         </div>
 
@@ -54,35 +108,39 @@ export default function Header() {
         <button
           type="button"
           aria-label="Notifications"
-          className="relative rounded-lg p-2 text-slate-600 transition hover:bg-slate-100"
+          className="relative shrink-0 rounded-lg p-2 text-slate-600 transition hover:bg-slate-100"
         >
           <Bell size={21} />
-
           <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500" />
         </button>
 
         {/* Profile */}
         <button
           type="button"
-          className="flex items-center gap-2 rounded-lg p-2 transition hover:bg-slate-100"
+          aria-label="My account"
+          className="flex shrink-0 items-center gap-1 rounded-lg p-1.5 transition hover:bg-slate-100 sm:gap-2 sm:p-2"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 sm:h-9 sm:w-9">
             <UserRound size={20} />
           </div>
 
-          <div className="hidden text-left sm:block">
-            <p className="text-sm font-semibold text-slate-800">
-              My Account
+          <div className="hidden min-w-0 text-left sm:block">
+            <p className="max-w-32 truncate text-sm font-semibold text-slate-800">
+              {user?.name || "User"}
             </p>
-            <p className="text-xs text-slate-500">
-              Personal
+
+            <p className="max-w-32 truncate text-xs text-slate-500">
+              {user?.email || "Account"}
             </p>
           </div>
 
-          <ChevronDown size={16} className="text-slate-500" />
+          <ChevronDown
+            size={16}
+            className="hidden text-slate-500 sm:block"
+          />
         </button>
-
       </div>
     </header>
   );
 }
+ 

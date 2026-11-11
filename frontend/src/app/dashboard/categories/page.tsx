@@ -66,7 +66,7 @@ export default function CategoriesPage() {
 
   const getToken = () => {
     if (typeof window === "undefined") return null;
-    return sessionStorage.getItem("token");
+    return localStorage.getItem("token");
   };
 
   const apiRequest = async <T,>(
